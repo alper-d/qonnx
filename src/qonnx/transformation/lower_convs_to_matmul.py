@@ -34,6 +34,15 @@ from qonnx.transformation.base import Transformation
 from qonnx.transformation.extract_conv_bias import ExtractBiasFromConv
 from qonnx.util.basic import get_by_name
 
+def weight_to_im2col(tensor):
+    out = np.transpose(tensor, (0, 2, 3, 1))
+    out = np.reshape(out, (tensor.shape[0], tensor.shape[1] * tensor.shape[2] * tensor.shape[3]))
+    return out
+
+
+def im2col_to_weight(tensor, ofm_size, ifm_size, kernel_size=(3, 3)):
+    out = np.reshape(tensor, (ofm_size, kernel_size[0], kernel_size[1], ifm_size))
+    return np.transpose(out, (0, 3, 1, 2))
 
 def _auto_pad_to_explicit_padding(autopad_str, idim_h, idim_w, k_h, k_w, stride_h, stride_w, n_dims):
     pad_total_h = (stride_h - 1) * idim_h - stride_h + k_h
