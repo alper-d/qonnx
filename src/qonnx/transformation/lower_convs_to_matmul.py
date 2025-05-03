@@ -142,10 +142,17 @@ class LowerConvsToMatMul(Transformation):
                 # conv weights are [OFM][IFM][k][k]
                 # first convert to [OFM][k][k][IFM] (to remain compatible with
                 # finn-hlslib and how it does im2col/sliding window)
+                if ofm_ch==64 and ifm_ch == 64:
+                    debug_2d = weight_to_im2col(W_conv)
                 W_matmul = W_conv.transpose(0, 2, 3, 1)  # W_conv = [OFM, IFM, k_H, k_W]
-                # reshape into [OFM][k*k*IFM] matrix
+                # reshape into [OFM][k_h*k_w*IFM] matrix
                 W_matmul = W_matmul.reshape(ofm_ch, ifm_ch * k_h * k_w)
-                # transpose to get ONNX-compatible [k*k*IFM][OFM] matrix
+                debug_4d = im2col_to_weight(W_matmul, ofm_ch, ifm_ch, (3,3))
+                if ofm_ch==64 and ifm_ch == 64:
+                    print("W_matmul.shape", W_matmul.shape)
+                    print("debug_2d.shape", debug_2d.shape)
+                    print((debug_2d==W_matmul).all())
+                    print((debug_4d==W_conv).all())
                 W_matmul = W_matmul.T
                 model.set_initializer(weight_name, W_matmul)
 
