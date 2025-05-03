@@ -34,6 +34,15 @@ from qonnx.transformation.base import Transformation
 from qonnx.transformation.extract_conv_bias import ExtractBiasFromConv
 from qonnx.util.basic import auto_pad_to_explicit_padding, get_by_name
 
+def weight_to_im2col(tensor):
+    out = np.transpose(tensor, (0, 2, 3, 1))
+    out = np.reshape(out, (tensor.shape[0], tensor.shape[1] * tensor.shape[2] * tensor.shape[3]))
+    return out
+
+
+def im2col_to_weight(tensor, ofm_size, ifm_size, kernel_size=(3, 3)):
+    out = np.reshape(tensor, (ofm_size, kernel_size[0], kernel_size[1], ifm_size))
+    return np.transpose(out, (0, 3, 1, 2))
 
 class LowerConvsToMatMul(Transformation):
     """Replace Conv layers with pairs of Im2Col-MatMul layers, plus Transpose
@@ -106,9 +115,17 @@ class LowerConvsToMatMul(Transformation):
             # conv weights are [OFM][IFM][k][k]
             # first convert to [OFM][k_h][k_w][IFM] (to remain compatible with
             # finn-hlslib and how it does im2col/sliding window)
+            if ofm_ch==64 and ifm_ch == 64:
+                debug_2d = weight_to_im2col(W_conv)
             W_matmul = W_conv.transpose(0, 2, 3, 1)  # W_conv = [OFM, IFM, k_H, k_W]
             # reshape into [OFM][k_h*k_w*IFM] matrix
             W_matmul = W_matmul.reshape(ofm_ch, ifm_ch * k_h * k_w)
+            debug_4d = im2col_to_weight(W_matmul, ofm_ch, ifm_ch, (3,3))
+            if ofm_ch==64 and ifm_ch == 64:
+                print("W_matmul.shape", W_matmul.shape)
+                print("debug_2d.shape", debug_2d.shape)
+                print((debug_2d==W_matmul).all())
+                print((debug_4d==W_conv).all())
             # transpose to get ONNX-compatible [k_h*k_w*IFM][OFM] matrix
             W_matmul = W_matmul.T
             model.set_initializer(weight_name, W_matmul)
