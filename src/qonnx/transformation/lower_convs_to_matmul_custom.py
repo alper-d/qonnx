@@ -156,9 +156,8 @@ class LowerConvsToMatMul(Transformation):
             nodes_to_insert = [inp_trans_node]
 
             if need_im2col:
-                reshape_ifm = ifm_ch if ifm_ch==3 else int(ifm_ch/2)
                 im2col_out = helper.make_tensor_value_info(
-                    model.make_new_valueinfo_name(), TensorProto.FLOAT, (1, ofm_dim_h, ofm_dim_w, reshape_ifm * k_h * k_w)
+                    model.make_new_valueinfo_name(), TensorProto.FLOAT, (1, ofm_dim_h, ofm_dim_w, ifm_ch * k_h * k_w)
                 )
                 graph.value_info.append(im2col_out)
                 im2col_out = im2col_out.name
