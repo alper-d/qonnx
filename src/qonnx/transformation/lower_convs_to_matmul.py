@@ -213,8 +213,6 @@ class LowerConvsToMatMul(Transformation):
                 weight_name = w_producer.input[0]
                 conv_weight_q_scale_name = w_producer.input[1]
         ifm_ch = model.get_tensor_shape(cnv_input)[1]  # assume NCHW
-        if not ifm_ch ==3:
-            ifm_ch = int(ifm_ch/2)
         ofm_ch = model.get_tensor_shape(cnv_output)[1]  # assume NCHW
         ifm_dim_h = model.get_tensor_shape(cnv_input)[2]  # assume NCHW
         ifm_dim_w = model.get_tensor_shape(cnv_input)[3]  # assume NCHW
