@@ -111,8 +111,6 @@ class LowerConvsToMatMul(Transformation):
             W_matmul = W_matmul.reshape(ofm_ch, ifm_ch * k_h * k_w)
             # transpose to get ONNX-compatible [k_h*k_w*IFM][OFM] matrix
             W_matmul = W_matmul.T
-            if ifm_ch==64:
-                print(adfasfasdfa)
             model.set_initializer(weight_name, W_matmul)
             if weight_name != conv_weight_inp_name:
                 # required for convs with quantized weights
